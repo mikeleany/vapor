@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use PGNParse;
+
+my $engine;
+my @opponents;
+my $time = '1:00';
+my $inc = 1.0;
+my $rounds;
+my $openings;
+my $pgnout = 'gauntlet.pgn';
+my $logfile = 'gauntlet.log';
+
+GetOptions(
+  "engine=s" => \$engine,
+  "opponent=s{,}" => \@opponents,
+  "time=s" => \$time,
+  "increment=f" => \$inc,
+  "rounds=i" => \$rounds,
+  "openings=s" => \$openings,
+  "pgnout=s" => \$pgnout,
+  "log=s" => \$logfile,
+) or die "Use the source, Luke! Correct command line options listed";
+die "Must specify primary engine" unless defined $engine;
+die "Must specify at least one opponent" unless @opponents;
+
+my @openings;
+my $wins = 0;
+my $losses = 0;
+my $draws = 0;
+my $incomplete = 0;
+
+if (defined $openings) {
+  my $pgnin = PGNParse->new($openings);
+  die "$openings: $!" unless defined $pgnin;
+  while (defined (my $tags = $pgnin->readnext)) {
+    push @openings, $tags->{MoveText};
+  }
+  $pgnin->close;
+}
+
+$rounds = @openings unless $rounds;
+$rounds = 1 unless $rounds;
+
+open PGN, '>>', $pgnout or die "$pgnout: $!";
+
+for (my $i = 1; $i <= $rounds; $i++) {
+  print "\nRound $i of $rounds: $wins-$losses-$draws **********************************\n";
+  print "Opening: $openings[$i-1]\n" if @openings;
+
+  for my $opp (@opponents) {
+    my $score;
+
+    $score = playgame($engine, $opp, $i, $openings[$i-1]);
+    if (!defined $score) { $incomplete++ }
+    elsif ($score == 1) { $wins++ }
+    elsif ($score == 0) { $draws++ }
+    elsif ($score == -1) { $losses++ }
+
+    $score = playgame($opp, $engine, $i, $openings[$i-1]);
+    if (!defined $score) { $incomplete++ }
+    elsif ($score == -1) { $wins++ }
+    elsif ($score == 0) { $draws++ }
+    elsif ($score == 1) { $losses++ }
+  }
+}
+
+close PGN;
+
+print "FINAL SCORE: $wins-$losses-$draws\n";
+print "$incomplete incomplete games\n" if $incomplete;
+
+exit;
+
+sub playgame {
+  my $eng1 = shift;
+  my $eng2 = shift;
+  my $round = shift;
+  my $opening = shift;
+  my $score;
+
+  my $pgn = `./mediator -w $eng1 -b $eng2 -t $time -i $inc -r $round -o $opening -l $logfile`;
+  print PGN "$pgn\n";
+  my ($result) = ($pgn =~ m#^\[Result "([^"]+)"\]#m);
+  my ($reason) = ($pgn =~ m/(\{[^}]+\})/m);
+  if ($result =~ m#^1/2-1/2#) { $score = 0 }
+  elsif ($result =~ m/(0|1)-(0|1)/) { $score = $1 - $2 }
+  else { warn "incomplete game\n" }
+  print "$eng1 vs $eng2: $result $reason\n";
+
+  return $score;
+}

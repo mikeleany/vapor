@@ -1,0 +1,368 @@
+/******************************************************************************
+ * $Id$
+ * Project: Vapor Chess
+ * Purpose: Handle Zobrist Keys
+ * 
+ * Copyright 2010 by Michael Leany
+ * All rights reserved
+ */
+
+#include "zobrist.h"
+
+const zobrist Z_PLACEMENT[NUM_COLORS][NUM_PIECES+1][NUM_SQUARES] = {
+  { // black
+    { // no piece
+      0,
+    },
+    { // black pawn
+      0xcd19de16cd0e60be, 0xabeab225f864018d, 0x38f5e044c27e2919,
+      0xd8feaf5183e12a86, 0xcf204fdd35802379, 0xfbf6a26edc972b1f,
+      0xe65bc8446f5a003d, 0x507df8bcf2a8565b, 0xbdece26c131c29a4,
+      0x934d267abfff309a, 0x6bc1e2e4c483788e, 0x03fb6da72606f89a,
+      0xa4cd43384494d409, 0x4fc02eb6a872abeb, 0x758c0e07cb8bad7c,
+      0xa0e97fda7b6292a3, 0x05efc1900edc015f, 0x27bc07ac36273895,
+      0xf12c709eb159c2d5, 0x72fd20487f7a9c47, 0x8f1f2604d2c15e97,
+      0xd757183032e64668, 0xca4b232b13435002, 0xf652fe81d2b6ee97,
+      0xc2a06e4aa6c19944, 0x2eb3c85794b24ca0, 0x8a8c495302dc4de3,
+      0x614ec566fb68b794, 0xc11396b24a10452f, 0xfeb74a28b8e23e60,
+      0xa8dbe567d5737851, 0xc3632e218afcf7bd, 0xa177da1225d18607,
+      0xe1153d1bdcb361a1, 0x955beefb14465445, 0x95aa02623b2aca8f,
+      0x043c113d5185ce3d, 0x58ae65551848e971, 0xcedc7580226e4b9f,
+      0xda4466dfe80dfad5, 0xce651b01cfad43fb, 0x0742efab6123f4a9,
+      0x8eeed7d86d778f9b, 0x279c071b8c36a3f0, 0x39c4759e77a29d4b,
+      0xf577fb695914d1f6, 0xd98659fd3db3b2db, 0x3c77fb6ba3b3e0f7,
+      0xa74872ca419c8453, 0x2a3462deee8faa55, 0xfd32a1a17b3e2c22,
+      0xf9d882449b04cabd, 0xe05eaf39e9f5d4c5, 0x0e52fba6138bf2e6,
+      0xd0e8e2d7fcb732ad, 0xdfb7e5cd2f0f45bc, 0xb469b6a320964365,
+      0x599bc7c30fbd472d, 0x3c63c5bd34a8a531, 0x699126b2e2fa60e6,
+      0x1f47fd55b9a140bc, 0x8621d06e33608cb3, 0xd81b4e2d52acec7d,
+      0xe7c9453df1054657,
+    },
+    { // black knight
+      0xb1c74e6f2d420abe, 0xb2d841b25b54feed, 0xd63a5c8a2ce80aa7,
+      0xbefeadd497e21333, 0x82802df28951486e, 0xd55c2cf001a889c0,
+      0x16754fb70f30ab4b, 0x7591e764569d2973, 0xe36a0d09946a2fdc,
+      0x89f1e258e1130884, 0x326f91369db47623, 0x44d891331123b47d,
+      0x4dfc8ea6a6b6c864, 0x29e343efe29f01cd, 0xd24d2688e3898acc,
+      0x3fe6f6f748fe3108, 0xf4d5d121a1974240, 0x69b211d1dde2fa32,
+      0x489152ea652426ba, 0xcd0b71ba3a23f8cb, 0xc22b5eff80088406,
+      0x006cb5e1b492e55d, 0x64306379257001e5, 0x716b230dbcd403d8,
+      0x08c920beeda14ac4, 0x16d99cb9ac022ff4, 0x33bb18e254116e9e,
+      0x0afd2200affcfb5d, 0xb4a298a3f95dcdc1, 0x1b7cf4e769966373,
+      0x269f179459e24d79, 0xb5d112daf102becc, 0x07faf18f390c16e5,
+      0xd868ed683732a4dd, 0x39720774389e2671, 0xd9b462982608bc5e,
+      0x3223a9d5f27c80c5, 0xe7e8cc6774928f5b, 0x1a5f4c1872c8f81a,
+      0x1d1c9f33dfa5be07, 0x4ccae31a1f550b4a, 0xe4ff77455a9d2bba,
+      0x729b7e82f0be8e07, 0x3a74a5a2d70f0bc1, 0x8cdba02c60a8780c,
+      0xf4b244de75ac05cd, 0xc1f5116598026f4a, 0xf4b69ea64dba0445,
+      0xb3fd79ee37375f41, 0x8535331a7bc1a0b6, 0x7979c8ea89bcb621,
+      0xa857035ad36d8d24, 0x0f99943c1568ae5c, 0x5fddd8b863b5cb0d,
+      0x4222eef73d6d61be, 0x358d2285f7c8fb41, 0x927cdbd71ff84145,
+      0x6af2ac67e25a93f5, 0x9ca86cfeeccdf338, 0x40e4dfafac4054b5,
+      0xd60bd654b2548744, 0xb84d7a1cb28fe20c, 0x4759345005f266a1,
+      0x65f4983e944b27ec,
+    },
+    { // black bishop
+      0x072ba4fd5b8e0d13, 0x10088d0ffbb3647e, 0xbdcd1faf4d4aed3f,
+      0x17119df09892d93a, 0x41b0c0d1fb919d12, 0x49f35c2649dcc125,
+      0xd49ee9bef6971c8d, 0x303aaaeff38e6dd4, 0xd7d4a8289ea89697,
+      0x66f6ae6fd6a27743, 0x5c5d29cf4487089d, 0xccea4e47e7a5404b,
+      0x5af2d6c5497a162a, 0xc568ef7d2d15902d, 0x1effdeb78515a446,
+      0xfd0f2940645c7930, 0x899b461b123bb2c9, 0x88ea3ca07b66029c,
+      0xd29d884ca801cbf8, 0x0daf63506422d28b, 0x5720b3f8ce574d21,
+      0xda0b9def66806260, 0xd60a7f51919ebd02, 0x8441868d5c9e1ecc,
+      0x347d31fbd3a15f2d, 0xa890d052345332c5, 0x85406aaafb9035c4,
+      0xdb188990a836a2d6, 0x9787b6cc91e9ad32, 0xbd42e99161d6cc93,
+      0xc2a2aada48833fc1, 0x6bd96ff29dc95438, 0xfd7eaa110a10792c,
+      0x28575f6af9b908b0, 0x920dd4b8efd8e498, 0x35172a374ba04c83,
+      0xe5e7a4326786998f, 0x59723aa440d12072, 0xe2c89478663a4edd,
+      0x67f29e4f0a8d02c6, 0x82c1dad741451479, 0x6e2b7f328d317486,
+      0xe53891e7a83917d8, 0xead301915e441c2d, 0x1b0cf333473d2043,
+      0x843a124b5cf92b85, 0x89792efbcbc8c329, 0x3e39ed3ad7e1e4c7,
+      0x5ca1330c6130aa73, 0x1c2ba79201e0d929, 0x03bd399a3db8a951,
+      0x709cd677efadc16d, 0x1a6649898406c618, 0xd9ac7e3b76689f29,
+      0x7387e9ad9028d217, 0x0e63d2ed0b0b2bcf, 0x33cd28c8c299a285,
+      0x2e6af73a31ca78b6, 0x0ab9c475fee57fdf, 0x3aebd2c4239f09a3,
+      0xa2aaa9305ee8eb73, 0xbc884d6e0f99a19b, 0x51723e240ebc6cd7,
+      0x06eea3b4ef598109,
+    },
+    { // black rook
+      0x5faab93ec4ab6ff9, 0xec60ef8de0d0b388, 0x7da4f8daa0144a08,
+      0x63c532b7ecc9fb0f, 0x1e5bfcc6539b23b3, 0x7361cef377254a3c,
+      0xfb7585d6763007f6, 0x46428f1872b0d877, 0x7347b78ed8c66823,
+      0x65fe9f5828539e2a, 0x26f9e9514854b73a, 0xae51c383f4cfd7bc,
+      0x349e51acbd69ecca, 0x478d420397620cbc, 0x9b3a9b0df8c6b934,
+      0xdb63d82e3f66ff0c, 0x5be82dba33ceeb39, 0x50e94cb26279c047,
+      0x58a7fee1dad6c527, 0x5df93d3767ae0db9, 0xc68000fd3ea8c61e,
+      0x253b94895fd2fd7f, 0x45fce606c9b0ba32, 0xe97caed255e4f9cb,
+      0x5a2fc00f8cacba6d, 0x982191c53e1e0155, 0x03c6315de5eb23ee,
+      0x8de6c6bf2d50266b, 0xbad7490a9d5273b1, 0x822355344d625039,
+      0xdf73ddc30eca62b2, 0xf64b1402f7365434, 0xfe2a343de3ce9480,
+      0xe07b086d754897be, 0xf2fe03616c2ea875, 0x8924d1e235c28c70,
+      0x0a84745ddd468414, 0xbd3b31d09de083a5, 0xbe2791059e423b5c,
+      0x877f972543e2882d, 0x8dcbaf434f2c1203, 0x9cb935480fd82746,
+      0xc645cc7e67d3aee6, 0x87fb9699a7195440, 0xb96b782a22d8c126,
+      0x6d58cad39127dc68, 0x09aae0fce86204c0, 0xea9349dab8483327,
+      0x3065d46a9352ca96, 0x36a663cb432db86d, 0x53970471baece637,
+      0x224b9f5f485ffdcf, 0xd46db3c6a25329da, 0x04c6b7f48747f8f4,
+      0xbdd0fcfb8e5a6759, 0xf1a304cb26138440, 0x5f25452f0970432d,
+      0xcd34f3516ed308cf, 0xecb10f500cb704aa, 0xf6e7e682a97aaf2d,
+      0xf46151161c8af4f5, 0x49de3db97bb0fe68, 0xd2eb9f2c2608cc8e,
+      0x254d7d7faaa16365,
+    },
+    { // black queen
+      0x09c80ac313e5e54b, 0x07ec04768818682b, 0xc60fc601685c1cd3,
+      0x24a4340a5d5ede76, 0x0b068a3daac3e0b4, 0xeb85ad2d226cd172,
+      0x64e62d4e56a73f60, 0x7d35fbc8b713b892, 0xd9481c2ecde98e78,
+      0x4c1eef28f19baefb, 0x172af6e18945f428, 0x41639dc4c401363d,
+      0xe41bc8161b273e12, 0x2374088c99750158, 0x81cbac391394cdd3,
+      0x33217a98dd95ce30, 0x348abfe72339a161, 0xf53fca4fa1fd35d4,
+      0xe84b79f8d2e043c1, 0x0840714d82244636, 0x2f4f298ac3dec0e0,
+      0xb64e08a638aeaa3c, 0x7a942cccb5398d7d, 0xadd0174ed48f1f47,
+      0x798f996b78a3b286, 0xeb6d48bd1fc1f991, 0x03e77bdf99777148,
+      0x69da1220945f830b, 0xcd2f8709b766044a, 0x9d2d84ab30611298,
+      0x67d309c77d7916cf, 0x18678bd99358d3c1, 0xc9bb4489ad8c0b41,
+      0xfd751eb214d75954, 0x9a4ec4fbef8b2f04, 0x00e3fb63ed793f82,
+      0x0ee44250f2e48873, 0xdbed5cc01fa25460, 0xffd390cef8120217,
+      0x00cab97c8872f7f4, 0x2d8ea79a07455441, 0x46380530648ba72b,
+      0x62a25febf05d349b, 0x08b61b7b9f95ef58, 0x3c74891eafe20178,
+      0xf105f5d578ae5a22, 0xea0c2959fbac54c6, 0x28b50cdf612f3c01,
+      0x1d6046b0894ba90c, 0x46f8ce487e6cb1af, 0xc0d460fe177880d8,
+      0xa8f8609ae25f832a, 0xbff6d8e663254f6d, 0x3a5f0675625f152a,
+      0x57a3dca9f7dcb7ad, 0xebd85323ee5b0c35, 0xef1617c83a989488,
+      0x36be0a726e36c6a5, 0x70974ea22540a467, 0x162cf65076305d4e,
+      0x75ce437de86e9f66, 0xcf333497968f6ca1, 0x60debeb81031f646,
+      0x1a8b023a525e2551,
+    },
+    { // black king
+      0xbaf17ff0a5ea826d, 0xa8e257ffd7e97675, 0x06abbeda28bdaea3,
+      0x3565aad81073959b, 0x074eb425e43d5fbf, 0xa1e8f4d25b493572,
+      0x4ee50471bd8765b2, 0xa7a2b829843f46ed, 0x2be3e48c419cb077,
+      0xb8f9e1c0730ad1f5, 0x9b57acb595d721b1, 0x0f6d1da684bc8d2f,
+      0x00703d211bc092f8, 0x09f2799a1cd55fa3, 0x24d8984bc66404a9,
+      0xbeec3140e4a8dc2b, 0x1ed357e9faacc373, 0x124f83f87f210508,
+      0xbb2aa991d74634ea, 0x7597c0866e366c07, 0xf2525064ec1ee5d7,
+      0xb4944705868e120c, 0xc14ec14fbc866719, 0xd74b1dcd95243ef2,
+      0x7841cfbae2788037, 0x2e50da48c9f3e915, 0x31b588a94ca0411e,
+      0x14770add11fb29f4, 0xaefacab6dc188683, 0xcdae0372ca19abc5,
+      0x473de15c99f796f8, 0x3059ea241b8ff1e2, 0xf023ea80d82b98b2,
+      0x739c2636e235dc66, 0xa80c1536d43dc275, 0x924cdf6933aacd75,
+      0xb353d91bddee5449, 0x2f8b101d7e0b64ec, 0x2f2f1dda96d596c9,
+      0xcf36c909bbf1dd87, 0x75feeaa59b685a49, 0x81bba9626ad0b4ad,
+      0xb2219dc1c91eb112, 0xd7f83ab3c7f66c76, 0xc5c1dc62608fea7f,
+      0x1122d3d357b5e5a9, 0x5f15638675bd26b7, 0xfa02e2a9e18705a2,
+      0xa9fda2847bf1353d, 0xe1e100b3db2f1a86, 0x911e90733dd6d2b2,
+      0x5ef60285b429b61a, 0xe9c27db93dbec46c, 0x594f46a391ed862a,
+      0x3727bb4d4d36c2ba, 0xf859e484d4ce0765, 0xeb13d18126569d0e,
+      0x9c9d008e2c86cdf8, 0x2abfa86cf4788551, 0x045d76561ab58574,
+      0x2880743f0540fa1f, 0x17083e9380d9b7af, 0x13bb70154e1959b9,
+      0x078d9530b62ab487,
+    },
+  },
+  { // white
+    { // no piece
+      0,
+    },
+    { // white pawn
+      0x76760024a495ccba, 0x20bc5d91a73f9faf, 0x53ce85010419f93c,
+      0x0cf3ab98e05db41c, 0x0bb3353c831e75db, 0xfe2a6b2fcd553dc1,
+      0xf6d4e02c77d01d36, 0xe99d09405a87af9a, 0x988b7d8eaf375365,
+      0xbf6e185eaa8c6401, 0xeb6c006b269d7d9d, 0x0baf42011e964860,
+      0xcde01ecac8ed293a, 0x77f6a3138b6f2a4f, 0x730e245f5d053dbb,
+      0xbd697d516c90d9cf, 0x2db29ee1c529a7a2, 0xdc7c2325ce194ab5,
+      0x43cf32cfcaee0450, 0x1cec47fe35c95d70, 0xbb302fbcf65bf943,
+      0x6d966b3d0a20fdc7, 0x383f8b675a220b5b, 0x393be846d64fd43a,
+      0x19a2c344d216fcfe, 0xaa5e525050b7dd18, 0xf49bc437ec4df44a,
+      0xa5c126f338fed682, 0x772860a1989fecac, 0x78298ea1fa079ce0,
+      0x7e560cffc55e4187, 0x517dd67b7b593b8d, 0xe04993c6437871c2,
+      0x2c5a8b3cb4b9adb9, 0x02ef3135a770966f, 0xaeb7a120660909c4,
+      0xd958103d5fd368d8, 0xe53ce101ccb11790, 0x4b2771d3e5161eac,
+      0x784ce71d4f182093, 0x5aabe033ba04d514, 0x1f005c2cde041ea8,
+      0x977cafefef28bdef, 0xa18cb5cd3adb4ce0, 0x8caeb8d6fedfc478,
+      0xb1c2b761691d83d2, 0xe306a10c22f9e915, 0x3db220df5096b935,
+      0xe0bb4ce2b8102617, 0xa5a6753ffd1870bc, 0xc9a00638de0a49a8,
+      0x6be68683f7caea7e, 0x63d6b6894862d32b, 0x8a0e8176ed4d6169,
+      0x8e631ee91c2d8ccd, 0x94e087aa3345ba7a, 0x6833518accff4c10,
+      0x3cdd825ec7169bd0, 0xff7fd09e251bfe8b, 0x8710bd3a0ed800c5,
+      0xe2939e9b089dea23, 0x4ed00419fcc7069c, 0x345f3c490e7fd281,
+      0xa60e6f1ea84a8579,
+    },
+    { // white knight
+      0x3e69735134cbdb8a, 0x18720912bdaa8786, 0x71efe62f7ad1700c,
+      0x6322ba7a17793afa, 0x64b3f38b0001c8dc, 0x7c13a7cc1c5dddc6,
+      0x9f0cb4b91c2895ff, 0x4a6c7747228aaf64, 0xd77b27429fce01ae,
+      0xd351526429cc1c66, 0xdf59d60832d0801f, 0xec882707d304032f,
+      0xc0909ae22284c770, 0x0652a3a544e5784e, 0xe713b5d099a8fd30,
+      0x98e18cc212e02e0d, 0x0e182b357bb69553, 0x3302c2412e6ab520,
+      0xee4156de045f5486, 0x80c9cb71060ce698, 0x573ae5b4db2b6631,
+      0xe26d08d138d6e96e, 0x7482f44e82a67c9c, 0x549abaf6b035705b,
+      0x7a55e4e3e9838010, 0x7ce5e610853efed2, 0xdcf69b3e6b9367cf,
+      0xa62ab9e6d1f63e3e, 0x81d331aabf977657, 0x5a008e67721daef2,
+      0x0f37e61226333840, 0x0d8eb50bc28a4a59, 0x9c8cf2b6ad8a539f,
+      0x096757afa120fe5f, 0x8a65423584596bd7, 0x4d3a5dad4ae84425,
+      0x36c072da268a1c26, 0xb17ed84338da7661, 0x974c695aa49a516a,
+      0xf26ac7a6c757f61c, 0x809ec77a664b19e9, 0xa0d8224a47729e9c,
+      0x8695f74b907e580d, 0x2eeae831147583ae, 0xef681ff3a531a369,
+      0x6f8bb4546b4877a3, 0x281345320beb097d, 0xe92aae7f0cb360a9,
+      0x8626070ff0324e02, 0x4d48f8292687f769, 0xe821f36f4ab9c0b7,
+      0x3fa9af179b4322f9, 0xf2ec1f74f96abcfb, 0x595768ee82afc89a,
+      0x4010caea81866db0, 0xfcb69af0a97f8fd4, 0xcdb8241e76657e2b,
+      0x215db982e911cdd7, 0x66b1deed86b3f730, 0xb77efb526bba8547,
+      0x85e135dae117a547, 0xa3f99420554429d0, 0x6def1884f8a20bd4,
+      0x188131570627859c,
+    },
+    { // white bishop
+      0x9f79eb85d291a124, 0xcb1abec7b08f16d6, 0x7433cc4d4686cd4b,
+      0x3a78945c9e16732e, 0x2f1fc93025a8c65c, 0x7f0b74d55e5db3c7,
+      0xdac51bff1519cc0c, 0x02837c2bf5da3012, 0x42fc14930cdde1b3,
+      0x7c7d4454cda7d6a9, 0x1230c514908ef99e, 0x40a644962a910500,
+      0x520ef9708cf08ee2, 0xc1172b79e8f7d38a, 0xfaaab0000c078f01,
+      0x47bd78a1dfb82bb2, 0xc48039c7bc9f7f12, 0xc6b64fef8bbb6b7c,
+      0xe2e1e0c83d6cda40, 0xe4ea7ba18ce650d3, 0xa5b273503733c1c9,
+      0x1952d76d0c7b64b5, 0x428c5b42949638e5, 0xbca7eab25c3924d6,
+      0x2e9af8b99185512b, 0x767b4c4dfcbdb860, 0x83d5cf90ef69de58,
+      0x4fe986acc0f512f2, 0xe572b7a6567782ab, 0x03679724f3a60703,
+      0x3899a7e7cfe7271a, 0xd65ecfa73b5def42, 0x4fc8e47c4fdb3d1f,
+      0x669ad6667847449b, 0x5875509b793879eb, 0x5ab7baf7fec0ad09,
+      0x73cd64e920d5152e, 0xd2189d0760a5cd49, 0x64aad36398a0f7cd,
+      0xc60c2cb66eb06e1b, 0xa610323276b0b12e, 0x4b3561243a6c53b2,
+      0x8edc1ef35f6b7bf6, 0xc7511dcba87d7c68, 0x60752c4a55211562,
+      0xbcf423ad926059f8, 0x3f9893cc32d3ac99, 0xc3e197778dd2feac,
+      0x1f9716a04306b996, 0xa1fb9a162f7b2661, 0x99b7af5256d11d99,
+      0x3e19ed6a05997943, 0x836ab7c35c93892a, 0x5319630b96c2649c,
+      0xd797ee2f38ebc627, 0x5f0edf5468016c23, 0x303e54b98ff72e75,
+      0x47640f236ccfe4a7, 0x9f1b3eee3fea4a33, 0x904e8b014ac69ef6,
+      0x2d12012989734a97, 0xd2e606a38a072863, 0xa9929de24594d8d3,
+      0x56317ecc7c427f94,
+    },
+    { // white rook
+      0x52bf57f922a4ec59, 0xbc397d3913e37aa8, 0x30e69538d695b0c1,
+      0x5c5eb34f1f4ba084, 0xbf88459c6f049d43, 0xeb559a40f2c24b4f,
+      0xe6baa4bd43023b9b, 0x2f828cd4daa71a4e, 0x601644cb64d8a58d,
+      0x57a85f2f7a987bb6, 0xcc35f0007298632f, 0xfef4cb1f9308acd3,
+      0x4a3086124dac529a, 0xe3b565c96ce630ec, 0x46aab691ec685037,
+      0xa3ccdcdf0511683c, 0xad22e5560ff23d2d, 0x5b372995dc7cfaa6,
+      0x837a3a8fe80c6fb5, 0x72471fff4523dc0d, 0x3cfadc0195778f57,
+      0x426b419a1f4eca61, 0xbf41917e0b1b5d4e, 0x7997021e3dc047da,
+      0x28dca2c00513ef94, 0x4db0bdde12b53dec, 0xe68d911bac53735d,
+      0xa2917955daf0a7e6, 0x89636bb6048ba204, 0x3e7c21a93725de58,
+      0x1d32e13b7173b19e, 0x0a266e39078b5e9f, 0x741fde3c77a9b0cc,
+      0x229db38a68593444, 0xf92e7baa5ccdeb7c, 0x34b7f022e1837c00,
+      0x21233d2471842c9c, 0x32da1c2336f4d297, 0x7e1b230a9f896f0f,
+      0xf7374cbbca1ce3dc, 0xcfa4e07c4d00d653, 0xcddc8cb72892b895,
+      0x264299c3c59f95ae, 0x332463d03719d407, 0x56b0ebd7217ec2cf,
+      0x4c76e67d6351ac61, 0x8637a1e71081ef34, 0xc257d06469dc8b62,
+      0x8ef96a1f08c5c9d9, 0xac3a9bb589ca6ed7, 0x580c0f24157ef8de,
+      0x2fa0c008718012d5, 0x02b137e3eb1dd13f, 0x4d624385cc85e9d8,
+      0xfb1c73bbf4d290d0, 0x193f91791cdc6920, 0x907f652bc6994504,
+      0x4110199675d7b9f0, 0xb5643171be769743, 0x5a2b9380c1859298,
+      0xee7ef7d7a69d4dc6, 0xe4e3e275753bb461, 0x4374f791d9936e51,
+      0xb433c6ca002669d0,
+    },
+    { // white queen
+      0x572f7d17fcbe4dc6, 0x3a603776c0929634, 0xc8dbedbfaf204a98,
+      0x83f5f6e783ba4966, 0x0cda77d1d35b6ded, 0x0394ebaf6ad4b0b8,
+      0x1c942f041625ec01, 0x4bba54c5bcc27d59, 0xbb45d586d59f1c6a,
+      0x7c8c361fe2cb6e3f, 0x20d5a67cd2cdc73d, 0xaf74a60d34674223,
+      0x4cacca462c048208, 0xc012f0c81743b722, 0x5a759277fea98bc4,
+      0x4fed7b370e90973e, 0xd3d9c389b2029926, 0x57b1b9fcebebb73a,
+      0x83902294b7ee0ce2, 0x75de466693543ba8, 0xbf6835ae83bf29d2,
+      0x703416d0ab196e10, 0x7811a5b9928be71e, 0x0a52247b1facea89,
+      0x9ed7f8b1a3bb30bc, 0x6937550e9ab1f438, 0x9a926bd5aba58901,
+      0xb8ab5227ebd94d7c, 0x96758d319d6d320f, 0xaccc15b5e94706cb,
+      0x6e8fd463e4944049, 0xc729560f7c88557d, 0xdf19e2b049d63937,
+      0xfc37a8f1687aaa0a, 0x64eb42ac0a4e2c71, 0x731128e3d399eb7d,
+      0xeeb5781e1b02867c, 0x9ebba49fc97df41e, 0x17cff0d7ee4137ae,
+      0xdd67e489b5a92995, 0x26beefa893842b8e, 0x1f795e5150d35104,
+      0x72d2dab4b5ae7742, 0xd537c340994b8de3, 0x255f6ec2cee617f1,
+      0x876c31da3641d096, 0x8484394fe4699440, 0x0c7477cd14efd806,
+      0x168a638140035647, 0x406bbd5925f94fbd, 0xf63e4847e8191da5,
+      0x847027a9e0888243, 0xa1d788330a667b88, 0x0e4d7bcc97ef8dc5,
+      0x67504deb28e7e4e3, 0x3ee0903abfdc0746, 0x523a3e3a9b8a8916,
+      0xcb1a6726f26a7ed4, 0x287f1f14e49ec5c8, 0x80792002ea916591,
+      0x948b992a691cc2ba, 0xd34c8ae7acc86c86, 0x14da97cb59467acb,
+      0x3c85d5921ddff351,
+    },
+    { // white king
+      0x32210ce1c6e39187, 0xa9e3b336f92f3981, 0x4f30b03be76fb5ae,
+      0x84dbc1ac042e5ebe, 0x2dafb0530c1bc721, 0x2acc23ce99590c82,
+      0xc64d8c9a2dfc3e3a, 0x98eba118fa6b3ce0, 0x8349b2b4a1aeec3f,
+      0xf847b19569d5a082, 0xa9eb1bef58a1e03a, 0x5826e2199fcc905c,
+      0x044bce84d01974a8, 0xb7a5988ba18d4f81, 0xc3a70f42c1b36f0d,
+      0x6087de1e413fd420, 0xa0c634b8986a78a5, 0x3633fd8330175128,
+      0xb51978e444761db3, 0x2559b36b57afc420, 0x6499db054783ef42,
+      0x51bb67e022b3dd1d, 0xf59b1f20ba14593c, 0xf90667597854b0fd,
+      0x21153d399a0f3d36, 0x42d85a8a712cc83b, 0xfb0f1e73e9cc6863,
+      0x5f334c4f3774470d, 0x10385a8a0626896e, 0x6620653517bc1da8,
+      0x7ad1c4452155614d, 0x64322488829969c5, 0xfe80f7faffae8839,
+      0xe12246e2a2d874da, 0xefa7cb25ea734663, 0xf6cdba9b37400491,
+      0xc84d70b24c67ae18, 0xc034faaa91f70579, 0xd1d2618a92c25b5b,
+      0x815ce8c2faf9f201, 0x37d99d68bcb6fb3a, 0x6a19c7c8364fba23,
+      0x2e34a41d7ab5035d, 0x3f3647e999f35a68, 0x90c39bc3de14d091,
+      0x867aadeaf27cc31a, 0x8980747e60c6b952, 0x0b76ff82710d2ad5,
+      0xa5b418e9fd163605, 0x31f220a775870c60, 0xf5e65751e5329750,
+      0x8983dd561f9453f3, 0x37d4bd0649494bd6, 0xee167315f5d65a1b,
+      0x15850ad74eff82c6, 0x825d952ba085cd11, 0xf73baa32467198d3,
+      0x0c4609e7fc4cf0b8, 0x761cb69ccd0e2976, 0x6717bab13ca35727,
+      0xdf176089c0301096, 0x4fdded3fb92949be, 0xb796e4441bc21664,
+      0xac7375fe2095265e,
+    },
+  },
+};
+
+const zobrist Z_EPSQ[NUM_FILES] = {
+  0x98c672683e8de0b5, 0x7a0d721a0d9bc1d9,
+  0x349d9203f41f53f7, 0xb5ab2c11937e82c9,
+  0xe0d2c0c2b4bafd4d, 0xae717b952502165c,
+  0x9e9bfd4ed2b81683, 0xc420859506f93dab,
+};
+
+#define WKCASTLE 0x31ae78f7f1e2a2bd
+#define WQCASTLE 0x865f11056aa18ce6
+#define BKCASTLE 0x9acdbc5f97b31d77
+#define BQCASTLE 0xfb46f85bf7df8071
+const zobrist Z_CASTLE[16] = {
+  0, WKCASTLE, WQCASTLE, WKCASTLE ^ WQCASTLE, // 0, 1, 2, 3
+  BKCASTLE, WKCASTLE ^ BKCASTLE, WQCASTLE ^ BKCASTLE, // 4, 5 ,6
+  WKCASTLE ^ WQCASTLE ^ BKCASTLE, BQCASTLE, // 7, 8
+  WKCASTLE ^ BQCASTLE, WQCASTLE ^ BQCASTLE, // 9, 10
+  WKCASTLE ^ WQCASTLE ^ BQCASTLE, BKCASTLE ^ BQCASTLE, // 11, 12
+  WKCASTLE ^ BKCASTLE ^ BQCASTLE, WQCASTLE ^ BKCASTLE ^ BQCASTLE, // 13, 14
+  WKCASTLE ^ WQCASTLE ^ BKCASTLE ^ BQCASTLE, // 15
+};
+
+const zobrist Z_WHITEMOVE = 0xa58529f9b891ace8;
+
+zobrist calcZobrist(const position *Pos) {
+  zobrist Key = 0;
+  bitboard Bd;
+  color c;
+  piece p;
+  square s;
+
+  // whose turn
+  if (Pos->Flags & PF_WHITEMOVE)
+    Key ^= Z_WHITEMOVE;
+
+  // castling rights
+  Key ^= Z_CASTLE[(Pos->Flags & PF_CASTLEFLAGS) >> 8];
+
+  if (Pos->Flags & PF_EPLEGAL)
+    Key ^= Z_EPSQ[FILE(Pos->EPSquare)];
+
+  // piece placement
+  for (c = BLACK; c < NUM_COLORS; c++) {
+    for (p = PAWN; p <= NUM_PIECES; p++) {
+      Bd = Pos->OccBy[c][p];
+      while (Bd) {
+        s = firstSq(Bd);
+        Key ^= Z_PLACEMENT[c][p][s];
+        TOGGLESQ(Bd, s);
+      }
+    }
+  }
+
+  return Key;
+}
+
+/* end of file */

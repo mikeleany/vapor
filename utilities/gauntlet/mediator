@@ -1,0 +1,388 @@
+#!/usr/bin/perl
+# Copyright 2011 by Michael Leany
+# Serves as an intermediary between two chess engines which implement the Chess
+# Engine Communication Protocol (xboard/WinBoard protocol).
+
+use strict;
+use warnings;
+use feature "switch";
+use IO::Select;
+use Getopt::Long;
+use Time::HiRes qw( clock_gettime clock_getres CLOCK_REALTIME CLOCK_MONOTONIC );
+use Chess::Rep;
+
+$| = 1; # unbuffered output
+$SIG{PIPE} = 'IGNORE'; # prevent problems with broken pipes
+
+my $t0;
+
+my $game;
+my @engines;
+my $result = undef;
+my @movelist;
+my @sanmoves;
+my %legalmoves;
+my $goflag = 1;
+my $min;
+my $sec;
+my $date = `date +%Y.%m.%d`;
+chomp $date;
+
+my $white;
+my $black;
+my $time = "1:00";
+my $inc = 0;
+my $opening = '';
+my $event = 'Computer Chess Game';
+my $site = '-';
+my $round = 1;
+my $logfile;
+
+GetOptions(
+  "white=s" => \$white,     # configuration file for white engine
+  "black=s" => \$black,     # configuration file for black engine
+  "time=s" => \$time,       # time in minutes
+  "increment|i=f" => \$inc, # increment in seconds
+  "opening=s" => \$opening, # opening moves
+  "event=s" => \$event,
+  "site=s" => \$site,
+  "round=s" => \$round,
+  "log=s" => \$logfile,
+) or die "Use the source, Luke! Correct command line options listed";
+
+open STDERR, '>>', $logfile or die "$logfile: $!\n" if defined $logfile;
+open(LOG, '>>&=', "STDERR") or die "what happened?";
+
+readPrefs();
+
+for my $eng (@engines) {
+  launchEngine($eng);
+}
+
+playGame();
+
+cleanup();
+exit;
+
+
+sub readPrefs {
+  die "white engine not specified.\n" unless $white;
+  die "black engine not specified.\n" unless $black;
+
+  die "increment cannot be negative.\n" unless $inc >= 0;
+  die "time must be in the format m[:ss]\n" unless $time =~ m/(\d+)(:\d\d)?/;
+  $min = $1;
+  $sec = $2;
+  $sec =~ s/^:0?//;
+  print LOG "Minutes = $min\tSeconds = $sec\n";
+
+  @sanmoves = split ',', $opening;
+  $game = Chess::Rep->new;
+  for my $move (@sanmoves) {
+    my $detail = $game->go_move($move);
+    my $cmove = lc("$detail->{from}$detail->{to}");
+    $cmove .= lc($detail->{promote}) if defined $detail->{promote};
+    push @movelist, $cmove;
+  }
+
+  @engines = ();
+  for my $engfile ($white, $black) {
+    open ENG, '<', $engfile or die "$engfile: $!";
+    my $name = <ENG>;
+    chomp $name;
+    my $cmd = <ENG>;
+    chomp $cmd;
+    my @cmd = split ' ', $cmd; #TODO: allow for spaces in args
+    my $dir = <ENG>;
+    chomp $dir;
+    close ENG;
+
+    my $eng = {
+      name => $name,
+      cmd => [@cmd],
+      dir => $dir,
+    };
+
+    push @engines, $eng;
+  }
+
+  print LOG "$engines[0]{name} is playing white.\n";
+  print LOG "$engines[1]{name} is playing black.\n";
+
+}
+
+sub launchEngine {
+  my $eng = shift;
+  my $rend;
+  my $wend;
+
+  print LOG "Launching $eng->{name}\n";
+
+  # set up pipes
+  pipe $rend, $wend;
+  my $progout = $wend;
+  $eng->{pipefr} = $rend;
+  $rend = $wend = undef; # so we don't reuse the same file handles
+  pipe $rend, $wend;
+  my $progin = $rend;
+  $eng->{pipeto} = $wend;
+  select $eng->{pipeto}; $| = 1; select STDOUT;
+  $eng->{readbuf} = "";
+
+
+  # send initialization commands before launching engine
+  engsend($eng, "xboard\nnew\nlevel 0 $time $inc\nhard\neasy\npost\nforce\n");
+  for my $move (@movelist) {
+    engsend($eng, "$move\n");
+  }
+
+  # create new process
+  $eng->{pid} = fork();
+  warn "can't fork: $!" unless defined $eng->{pid};
+  if (defined $eng->{pid} and $eng->{pid} == 0) {
+    # child process
+    open STDERR, '>&', $progout or die "failed to redirect stderr: $!";
+    open STDOUT, '>&', $progout or die "failed to redirect stdout: $!";
+    open STDIN, '<&', $progin or die "failed to redirect stdin: $!";
+    chdir $eng->{dir} or die "$eng->{dir}: $!" if $eng->{dir};
+    exec {$eng->{cmd}[0]} @{$eng->{cmd}};
+    die "exec failed: $!";
+  }
+
+  # parent process
+  # close engine's end of pipes
+  close $progin;
+  close $progout;
+}
+
+sub playGame {
+  my $turn = !($game->to_move);
+  checkstatus($turn);
+  print LOG "\$turn = $turn\n";
+  $engines[0]{'time'} = $min*60.0 + $sec;
+  $engines[1]{'time'} = $min*60.0 + $sec;
+  my $cstime = $engines[$turn]{'time'} * 100;
+  $t0 = clock_gettime(CLOCK_MONOTONIC);
+  engsend($engines[$turn], "time $cstime\notim $cstime\ngo\n");
+  until (defined $result) {
+    unless (can_read($engines[$turn])) {
+      checktime($turn);
+      next;
+    }
+    my $line = engrecv($engines[$turn]);
+    parseLine($turn, $line);
+    $turn = !$game->to_move();
+  }
+}
+
+sub cleanup {
+  for my $eng (@engines) {
+    if ($eng->{pid}) {
+      engsend($eng, "result $result\n");
+      engsend($eng, "quit\n");
+    }
+  }
+  for my $eng (@engines) {
+    while (defined engrecv($eng)) { next }
+  }
+  printpgn();
+}
+
+sub printpgn() {
+  my $ply = 0;
+  my @tokens;
+  my $col = 80;
+  my @rtokens = ($result =~ m/(\S+)\s*(.*)/);
+
+  print "[Event \"$event\"]\n";
+  print "[Site \"$site\"]\n";
+  print "[Date \"$date\"]\n";
+  print "[Round \"$round\"]\n";
+  print "[White \"$engines[0]{name}\"]\n";
+  print "[Black \"$engines[1]{name}\"]\n";
+  print "[Result \"$rtokens[0]\"]\n";
+  for my $move (@sanmoves) {
+    push @tokens, ($ply/2 + 1 . ".") unless ($ply % 2);
+    push @tokens, $move;
+    $ply++;
+  }
+  push @tokens, @rtokens;
+
+  for my $tok (@tokens) {
+    if ($col + 1 + length($tok) > 80) {
+      print "\n$tok";
+      $col = length($tok);
+    }
+    else {
+      print " $tok";
+      $col += length($tok) + 1;
+    }
+  }
+  print "\n";
+}
+
+sub suicide {
+  my $msg = shift;
+
+  $result = '*' unless defined $result;
+  cleanup();
+  die "$msg\n";
+}
+
+sub engsend {
+  my $eng = shift;
+  my $name = $eng->{name};
+  my $fh = $eng->{pipeto};
+  my $string = "";
+
+  $string .= shift while (@_);
+  print $fh $string;
+
+  chomp $string;
+  my @lines = split /\n/, $string;
+  foreach my $line (@lines) {
+    print LOG "$name << ", "$line\n";
+  }
+}
+
+sub engrecv {
+  my $eng = shift;
+  my $name = $eng->{name};
+  my $fh = $eng->{pipefr};
+
+  until ($eng->{readbuf} =~ m/\n/) {
+    my $n = sysread $fh, $eng->{readbuf}, 100, length($eng->{readbuf});
+    return undef unless $n;
+  }
+  $eng->{readbuf} =~ s/(.*\n)//;
+  my $line = $1;
+  print LOG "$name >> $line" if $line;
+
+  # remove leading and trailing whitespace
+  $line =~ s/^\s*//;
+  $line =~ s/\s*$//;
+  return $line;
+}
+
+sub can_read {
+  my $eng = shift;
+
+  return 1 if length $eng->{readbuf};
+
+  my $in = IO::Select->new;
+  my $fh = $eng->{pipefr};
+  $in->add($fh);
+  return $in->can_read($eng->{'time'});
+}
+
+sub parseLine {
+  my $eng = shift;
+  my $line = shift;
+
+  suicide("$engines[$eng]{name} died unexpectedly") unless defined $line;
+
+  given ($line) {
+    when (/^move\s+(\S+)/) {
+      my $move = $1;
+      my $detail;
+      unless (defined eval { $detail = $game->go_move($move) }) {
+        warn $@;
+        setresult(!$eng, "$engines[$eng]{name} makes illegal move: $move");
+      }
+      $detail = implied_promote($detail);
+      my $cmove = lc("$detail->{from}$detail->{to}");
+      $cmove .= lc($detail->{promote}) if defined $detail->{promote};
+      push @sanmoves, $detail->{san};
+
+      if (checktime($eng)) {
+        $engines[$eng]{'time'} += $inc;
+        my $turn = !$eng;
+        my $ptime = int ($engines[$turn]{'time'} * 100);
+        my $otime = int ($engines[$eng]{'time'} * 100);
+        if ($goflag) {
+          engsend($engines[$turn], "$cmove\ntime $ptime\notim $otime\ngo\n");
+          $goflag = 0;
+        } else {
+          engsend($engines[$turn], "time $ptime\notim $otime\n$cmove\n");
+        }
+        checkstatus($turn);
+      }
+    }
+    when (m{^0-1\b|1-0\b|1/2-1/2\b}) {
+      # TODO: verify result
+      $result = $line;
+    }
+    when (/^resign\b/) {
+      setresult(!$eng, "$engines[$eng]{name} resigns");
+    }
+    when (/^Illegal move\b/) {
+      suicide("Illegal move reported by $engines[$eng]{name}");
+    }
+    default {
+      # ignore lines I don't understand
+    }
+  }
+}
+
+sub setresult {
+  my $winner = shift;
+  my $reason = shift;
+
+  if ($winner == 0) { $result = '1-0' }
+  elsif ($winner == 1) { $result = '0-1' }
+  else { $result = '1/2-1/2' }
+
+  $result .= " {$reason}" if $reason;
+}
+
+sub checkstatus {
+  my $turn = shift;
+  my $status = $game->status;
+
+  if ($status->{mate}) {
+    my $winner = !$turn;
+    setresult($winner, "$engines[$winner]{name} mates");
+  }
+  elsif ($status->{stalemate}) {
+    setresult(0.5, "Stalemate");
+  }
+}
+
+sub implied_promote {
+  my $detail = shift;
+  my $mover = $game->to_move();
+
+  if ($detail->{piece} & 0x01 && $detail->{to} =~ m/[18]/) {
+    unless ($detail->{promote}) {
+      print LOG "implied promotion\n";
+      my $pc = 'q';
+      $pc = 'Q' if $mover == 0;
+      print LOG "promotion piece: $pc\n";
+      $game->set_piece_at($detail->{to_index}, $pc);
+      $detail->{promote} = $pc;
+      $detail->{san} .= '=Q';
+      print LOG "san: $detail->{san}\n";
+      # TODO: handle check and checkmate
+      $game->compute_valid_moves;
+      print LOG "position updated\n";
+
+    }
+  }
+
+  return $detail;
+}
+
+sub checktime {
+  my $eng = shift;
+
+  my $t1 = clock_gettime(CLOCK_MONOTONIC);
+  my $delta = ($t1 - $t0);
+  $engines[$eng]{'time'} -= $delta;
+  $t0 = $t1;
+  if ($engines[$eng]{'time'} <= 0) {
+    setresult(!$eng, "$engines[$eng]{name} forfeits on time");
+    return 0;
+  }
+
+  return $engines[$eng]{'time'};
+}

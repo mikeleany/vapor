@@ -14,7 +14,7 @@
 #define APP_NAME        "Vapor Chess"
 #define APP_SHORT_NAME  "Vapor"
 #define VER_NAME        "deja vu"
-#define VER_NUM         "0.02"
+#define VER_NUM         "0.2.1"
 
 const version VER = {
     AUTHOR_NAME,

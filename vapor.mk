@@ -14,7 +14,7 @@ sources := $(notdir $(wildcard $(srcdir)/*.c))
 objects := $(sources:.c=.o)
 
 # Build Number and Date
-revision := $(shell svnversion $(vapordir))
+revision := $(shell git rev-parse --short HEAD || echo unknown)
 builddate := $(shell date +%F)
 
 # C Preprocessor Options sent only to version.c
